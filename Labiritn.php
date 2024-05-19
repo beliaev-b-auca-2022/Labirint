@@ -29,14 +29,17 @@ class Dungeon {
 class Player {
     public $currentRoom;
     public $score;
+    public $route;
 
     public function __construct($startRoom) {
         $this->currentRoom = $startRoom;
         $this->score = 0;
+        $this->route = [$startRoom];
     }
 
     public function move($room) {
         $this->currentRoom = $room;
+        $this->route[] = $room;
         $this->interactWithRoom();
     }
 
@@ -69,7 +72,6 @@ class Player {
     }
 }
 
-// Загрузка подземелья из внешнего источника (например, JSON файла)
 function loadDungeon($filePath) {
     $json = file_get_contents($filePath);
     $data = json_decode($json, true);
@@ -86,22 +88,21 @@ function loadDungeon($filePath) {
     return new Dungeon($rooms, $data['startRoom'], $data['exitRoom']);
 }
 
-// Обработка входных данных
 $dungeon = loadDungeon('dungeon.json');
 $player = new Player($dungeon->rooms[$dungeon->startRoom]);
 
-// Простая маршрутизация для управления перемещением игрока
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $direction = $_POST['direction'];
-    $nextRoom = $dungeon->rooms[$direction]; // Предполагаем, что передаётся индекс комнаты
+    $nextRoom = $dungeon->rooms[$direction]; 
     $player->move($nextRoom);
 }
 
-// Вывод результата
 echo json_encode([
     'currentRoom' => $player->currentRoom,
     'score' => $player->score,
-    'dungeon' => $dungeon,
+    'route' => array_map(function($room) use ($dungeon) {
+        return array_search($room, $dungeon->rooms);
+    }, $player->route),
 ]);
 
 ?>
